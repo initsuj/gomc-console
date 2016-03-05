@@ -28,8 +28,9 @@ var (
 
 func Init() error {
 	var err error
+
 	if err = load(); err != nil {
-		return err
+		return nil
 	}
 
 	watcher, err = fsnotify.NewWatcher()
@@ -51,6 +52,8 @@ func Init() error {
 				}
 			case err := <-watcher.Errors:
 				log.Println("error:", err)
+			case <-done:
+				break
 			}
 		}
 	}()
@@ -63,7 +66,14 @@ func Store(a mcauth.Account) error {
 	accounts[a.Login] = a
 	state.RUnlock()
 
-	return save()
+	if err := save(); err != nil{
+		return err
+	}
+
+	if watcher == nil{
+		return load()
+	}
+	return nil
 }
 
 func Find(s string) (a mcauth.Account) {
@@ -75,8 +85,10 @@ func Find(s string) (a mcauth.Account) {
 }
 
 func Close() {
-	<-done
-	watcher.Close()
+	if watcher != nil{
+		done <- true
+		watcher.Close()
+	}
 }
 
 func load() error {

@@ -8,6 +8,12 @@ import (
 	"flag"
 	"github.com/initsuj/gomc-console/cache"
 	"github.com/initsuj/gomc-console/conf"
+	"bufio"
+	"os"
+)
+
+var(
+	exit = make(chan bool)
 )
 
 func main() {
@@ -35,4 +41,18 @@ func main() {
 	console.Println("test")
 	console.Println("test §1Blue text §fand §cRed text")
 	fmt.Println("hello")
+
+	go func(){
+		input := bufio.NewScanner(os.Stdin)
+		for input.Scan() {
+			text := input.Text()
+
+			if text == "/quit"{
+				exit <- true
+				break
+			}
+		}
+	}()
+
+	<-exit
 }
