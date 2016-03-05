@@ -7,6 +7,7 @@ import (
 	"github.com/initsuj/gomc/mcchat"
 	"flag"
 	"github.com/initsuj/gomc-console/cache"
+	"github.com/initsuj/gomc-console/conf"
 )
 
 func main() {
@@ -24,7 +25,9 @@ func main() {
 	}
 	defer cache.Close()
 
-
+	if err := conf.Load("gomc.ini"); err != nil{
+		console.Println(mcchat.Red, "Error opening ini file: ", err.Error())
+	}
 
 	//fmt.Print("test = " + mcchat.Black)
 	console.Print(mcchat.Yellow, "hello ", mcchat.Red, "Red, ", mcchat.DarkRed, " DarkRed")

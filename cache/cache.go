@@ -58,7 +58,7 @@ func Init() error {
 	return nil
 }
 
-func Store(a auth.Account) error {
+func Store(a mcauth.Account) error {
 	state.RLock()
 	accounts[a.Login] = a
 	state.RUnlock()
@@ -66,7 +66,7 @@ func Store(a auth.Account) error {
 	return save()
 }
 
-func Find(s string) (a auth.Account) {
+func Find(s string) (a mcauth.Account) {
 	state.RLock()
 	a = accounts[s]
 	state.RUnlock()
