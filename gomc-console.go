@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/initsuj/gomc-console/console"
-	"github.com/initsuj/gomc/mcchat"
-	"github.com/initsuj/gomc/mcauth"
 	"flag"
 	"github.com/initsuj/gomc-console/cache"
 	"github.com/initsuj/gomc-console/conf"
+	"github.com/initsuj/gomc-console/console"
+	"github.com/initsuj/gomc/mcauth"
+	"github.com/initsuj/gomc/mcchat"
+	"github.com/initsuj/gomc/mcserver"
 	"os"
 )
 
@@ -70,7 +71,7 @@ func main() {
 
 		if authd {
 			console.Println("Successfully validated!")
-		}else {
+		} else {
 			console.Println("Acccount token validation failed!")
 		}
 	}
@@ -99,10 +100,11 @@ func main() {
 				break
 			}
 
-			aerr, ok := err.(mcauth.AuthError); if !ok || aerr.Type != "ForbiddenOperationException" {
+			aerr, ok := err.(mcauth.AuthError)
+			if !ok || aerr.Type != "ForbiddenOperationException" {
 				console.Println(mcchat.Red, "Error while logging into Minecraft: ", err)
 				break
-			}else {
+			} else {
 				console.Println(mcchat.Red, err)
 
 				user = console.Prompt("Please enter mojang account login: ")
@@ -112,10 +114,15 @@ func main() {
 
 		if authd {
 			console.Println("Successfully authenticated!")
-		}else {
+		} else {
 			console.Println(mcchat.Red, "Cannot authenticate!")
 			os.Exit(1)
 		}
+	}
+
+	err := mcserver.GetServerInfo(server)
+	if err != nil {
+		console.Println(err)
 	}
 
 	go console.Scan(func(input string) {
@@ -126,8 +133,3 @@ func main() {
 
 	<-exit
 }
-
-
-
-
-
