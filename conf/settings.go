@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	SettingsLoaded = false
 	CurrentSettings Settings
 )
 
@@ -29,6 +30,8 @@ func Load(filename string) error {
 		if err := ini.Unmarshal(c, &CurrentSettings); err != nil {
 			return err
 		}
+
+		SettingsLoaded = true
 	}
 
 	return nil

@@ -1,19 +1,19 @@
 package main
 
 import (
-	"fmt"
 
 	"github.com/initsuj/gomc-console/console"
 	"github.com/initsuj/gomc/mcchat"
+	"github.com/initsuj/gomc/mcauth"
+	"github.com/initsuj/gomc/mcauth/mcrequest"
 	"flag"
 	"github.com/initsuj/gomc-console/cache"
 	"github.com/initsuj/gomc-console/conf"
-	"bufio"
-	"os"
 )
 
 var(
 	exit = make(chan bool)
+
 )
 
 func main() {
@@ -35,24 +35,71 @@ func main() {
 		console.Println(mcchat.Red, "Error opening ini file: ", err.Error())
 	}
 
-	//fmt.Print("test = " + mcchat.Black)
-	console.Print(mcchat.Yellow, "hello ", mcchat.Red, "Red, ", mcchat.DarkRed, " DarkRed")
-	console.Println(mcchat.Yellow, "hello ", mcchat.Red, "Red, ", mcchat.DarkRed, " DarkRed")
-	console.Println("test")
-	console.Println("test §1Blue text §fand §cRed text")
-	fmt.Println("hello")
+	// user by priority: flag -> settings -> user input
+	if user == "" && conf.SettingsLoaded {
+		user = conf.CurrentSettings.Connection.Login
+	}
 
-	go func(){
-		input := bufio.NewScanner(os.Stdin)
-		for input.Scan() {
-			text := input.Text()
+	if user == ""{
+		user = console.Prompt("Please enter mojang account login: ")
+	}
 
-			if text == "/quit"{
-				exit <- true
-				break
-			}
+	if user == "" && conf.SettingsLoaded {
+		user = conf.CurrentSettings.Connection.Login
+	}
+
+	acct := cache.Find(user)
+
+	if pwd == "" && conf.SettingsLoaded {
+		pwd = conf.CurrentSettings.Connection.Password
+	}
+
+	if pwd == "" && acct.AccessToken == ""{
+		pwd = console.ReadPassword("Please enter mojang account password: ")
+	}
+
+	authd := false
+	if acct.AccessToken != "" && acct.Login != ""{
+
+	}
+
+	if !authd {
+		if pwd == "" {
+			pwd = console.ReadPassword("Please enter mojang account password: ")
 		}
-	}()
+		if acct.Login == ""{
+			acct.Login = user
+		}
+
+		if acct.ClientToken == ""{
+			id, err := mcauth.NewUUID()
+			if err != nil{
+				panic(err)
+			}
+			acct.ClientToken = id
+		}
+		console.Println("Contacting Minecraft.net!")
+		err := mcauth.Login(mcrequest.NewMinecraftLogin(acct.Login, pwd, acct.ClientToken), &acct)
+		if err != nil{
+			console.Println(mcchat.Red, "Error while logging into Minecraft: ", err)
+		}else{
+			authd = true
+			cache.Store(acct)
+		}
+
+		if authd{
+			console.Println("Successfully authenticated!")
+		}
+	}
+
+	go console.Scan(func(input string){
+		if input == "/quit"{
+			exit <- true
+		}
+	})
 
 	<-exit
 }
+
+
+

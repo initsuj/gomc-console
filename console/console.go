@@ -7,12 +7,19 @@ import (
 
 	"github.com/daviddengcn/go-colortext"
 	"github.com/initsuj/gomc/mcchat"
+	"os"
+	"bufio"
+	"github.com/howeyc/gopass"
 )
 
 var (
 	colorStr  = regexp.MustCompile("(§{1}[0-9a-fA-F])")
 	str2Color = make(map[string]mcchat.Colorer, 16)
+	stopScan = make(chan bool, 1)
+	scanning = false
 )
+
+type InputHandler(string)
 
 func init() {
 	str2Color[string(mcchat.Black)] = mcchat.Black
@@ -120,5 +127,48 @@ func SetForegroundColor(c mcchat.Colorer) {
 	case mcchat.White:
 		ct.Foreground(ct.White, true)
 
+	}
+}
+
+func Prompt(m string) (v string){
+	for {
+		Print(m)
+		_, err := fmt.Scanln(&v)
+		if err != nil{
+			Print(mcchat.Red, "There was an error reading your input!")
+			continue
+		}
+		if v != ""{
+			break
+		}
+	}
+	return
+}
+
+func ReadPassword(m string)(v string){
+	for {
+		Print(m)
+		p, err := gopass.GetPasswdMasked()
+		if err != nil{
+			Print(mcchat.Red, "There was an error reading your password!")
+		}
+		if v = string(p); v != ""{
+			break
+		}
+	}
+
+	return
+}
+
+func Scan(handler func(string)){
+	input := bufio.NewScanner(os.Stdin)
+	for input.Scan() {
+		go func(){handler(input.Text())}()
+	}
+}
+
+func Close(){
+	if scanning{
+		stopScan <- true
 	}
 }
