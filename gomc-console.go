@@ -17,11 +17,13 @@ var (
 func main() {
 
 	var ini, server, user, pwd string
+	var offline bool
 
 	flag.StringVar(&ini, "i", "gomc.ini", "location of ini file to use.")
 	flag.StringVar(&server, "s", "", "server to connect to.")
 	flag.StringVar(&user, "u", "", "mojang account username.")
 	flag.StringVar(&pwd, "p", "", "mojang account password.")
+	flag.BoolVar(&offline, "offline", false, "play in offline mode.")
 	flag.Parse()
 
 	if err := cache.Init(); err != nil {
@@ -48,16 +50,18 @@ func main() {
 	acct := cache.Find(user)
 
 	// password by priority: flag -> settings -> acct caching -> user input
-	if pwd == "" {
-		pwd = conf.Current.Connection.Password
+	if !offline {
+		if pwd == "" {
+			pwd = conf.Current.Connection.Password
+		}
+
+		if pwd == "" && acct.AccessToken == "" {
+			pwd = console.ReadPassword("Please enter mojang account password: ")
+		}
 	}
 
-	if pwd == "" && acct.AccessToken == "" {
-		pwd = console.ReadPassword("Please enter mojang account password: ")
-	}
-
-	authd := false
-	if acct.AccessToken != "" && acct.Login != "" {
+	authd := offline
+	if !authd && acct.AccessToken != "" && acct.Login != "" {
 		authd, _ = mcauth.Validate(acct)
 
 		if !authd {
