@@ -8,6 +8,7 @@ import (
 	"flag"
 	"github.com/initsuj/gomc-console/cache"
 	"github.com/initsuj/gomc-console/conf"
+	"os"
 )
 
 var (
@@ -62,9 +63,7 @@ func main() {
 	}
 
 	if !authd {
-		if pwd == "" {
-			pwd = console.ReadPassword("Please enter mojang account password: ")
-		}
+
 		if acct.Login == "" {
 			acct.Login = user
 		}
@@ -77,16 +76,32 @@ func main() {
 			acct.ClientToken = id
 		}
 		console.Println("Contacting Minecraft.net!")
-		err := mcauth.Login(mcrequest.NewMinecraftLogin(acct.Login, pwd, acct.ClientToken), &acct)
-		if err != nil {
-			console.Println(mcchat.Red, "Error while logging into Minecraft: ", err)
-		}else {
-			authd = true
-			cache.Store(acct)
+
+		// give three attempts to login
+		for i := 0; i < 2; i++ {
+			err := mcauth.Login(mcrequest.NewMinecraftLogin(acct.Login, pwd, acct.ClientToken), &acct)
+			if err == nil {
+				authd = true
+				cache.Store(acct)
+				break
+			}
+
+			aerr, ok := err.(mcauth.AuthError); if !ok || aerr.Type != "ForbiddenOperationException" {
+				console.Println(mcchat.Red, "Error while logging into Minecraft: ", err)
+				break
+			}else {
+				console.Println(mcchat.Red, err)
+
+				user = console.Prompt("Please enter mojang account login: ")
+				pwd = console.ReadPassword("Please enter mojang account password: ")
+			}
 		}
 
 		if authd {
 			console.Println("Successfully authenticated!")
+		}else {
+			console.Println(mcchat.Red, "Cannot authenticate!")
+			os.Exit(1)
 		}
 	}
 
