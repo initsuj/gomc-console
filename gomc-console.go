@@ -4,7 +4,6 @@ import (
 	"github.com/initsuj/gomc-console/console"
 	"github.com/initsuj/gomc/mcchat"
 	"github.com/initsuj/gomc/mcauth"
-	"github.com/initsuj/gomc/mcauth/mcrequest"
 	"flag"
 	"github.com/initsuj/gomc-console/cache"
 	"github.com/initsuj/gomc-console/conf"
@@ -59,7 +58,15 @@ func main() {
 
 	authd := false
 	if acct.AccessToken != "" && acct.Login != "" {
+		var err error
+		authd, err = mcauth.Validate(acct)
+		if err != nil {
+			console.Println("Acccount token validation failed!")
+		}
 
+		if authd {
+			console.Println("Successfully validated!")
+		}
 	}
 
 	if !authd {
@@ -79,7 +86,7 @@ func main() {
 
 		// give three attempts to login
 		for i := 0; i < 2; i++ {
-			err := mcauth.Login(mcrequest.NewMinecraftLogin(acct.Login, pwd, acct.ClientToken), &acct)
+			err := mcauth.Authenticate(&acct, pwd)
 			if err == nil {
 				authd = true
 				cache.Store(acct)
