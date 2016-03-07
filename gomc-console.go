@@ -58,14 +58,16 @@ func main() {
 
 	authd := false
 	if acct.AccessToken != "" && acct.Login != "" {
-		var err error
-		authd, err = mcauth.Validate(acct)
-		if err != nil {
-			console.Println("Acccount token validation failed!")
+		authd, _ = mcauth.Validate(acct)
+
+		if !authd {
+			authd = (mcauth.Refresh(&acct) == nil)
 		}
 
 		if authd {
 			console.Println("Successfully validated!")
+		}else {
+			console.Println("Acccount token validation failed!")
 		}
 	}
 
@@ -120,6 +122,8 @@ func main() {
 
 	<-exit
 }
+
+
 
 
 
